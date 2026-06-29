@@ -1,0 +1,6 @@
+{
+  "name": "3D Letter Tracing Adventure",
+  "description": "An interactive, premium educational game for children to learn letter tracing in Arabic, English, French, and German, featuring realistic path tracing, physics-based particles, and beautiful floating island aesthetics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

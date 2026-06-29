@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Letter Tracing Adventure - Standalone Edition</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .font-display {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    /* Animated floating clouds */
+    @keyframes float-cloud-1 {
+      0% { transform: translateX(-150px) translateY(0px); }
+      50% { transform: translateX(50vw) translateY(15px); }
+      100% { transform: translateX(100vw) translateY(0px); }
+    }
+    @keyframes float-cloud-2 {
+      0% { transform: translateX(100vw) translateY(0px); }
+      50% { transform: translateX(50vw) translateY(-20px); }
+      100% { transform: translateX(-150px) translateY(0px); }
+    }
+    .cloud-1 {
+      animation: float-cloud-1 32s linear infinite;
+    }
+    .cloud-2 {
+      animation: float-cloud-2 42s linear infinite;
+    }
+    /* Breathing bounce for the letter and island */
+    @keyframes floating-island {
+      0% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-12px) rotate(1.5deg); }
+      100% { transform: translateY(0px) rotate(0deg); }
+    }
+    .floating-island-anim {
+      animation: floating-island 6s ease-in-out infinite;
+    }
+    .glassmorphism {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    /* Custom button presses */
+    .bubble-btn {
+      transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .bubble-btn:active {
+      transform: scale(0.95) translateY(3px);
+    }
+    /* RTL adjustments */
+    .rtl {
+      direction: rtl;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-sky-400 via-sky-300 to-amber-100 min-h-screen text-slate-800 relative w-screen h-screen overflow-hidden">
+
+  <!-- BACKGROUND FLOATING CLOUDS -->
+  <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute top-[10%] left-[-100px] cloud-1 opacity-60">
+      <div class="w-48 h-16 bg-white rounded-full filter blur-sm shadow-md relative">
+        <div class="absolute w-24 h-24 bg-white rounded-full top-[-40px] left-8"></div>
+        <div class="absolute w-20 h-20 bg-white rounded-full top-[-30px] left-20"></div>
+      </div>
+    </div>
+    <div class="absolute top-[25%] right-[-100px] cloud-2 opacity-50">
+      <div class="w-64 h-20 bg-white rounded-full filter blur-sm shadow-md relative">
+        <div class="absolute w-32 h-32 bg-white rounded-full top-[-50px] left-12"></div>
+        <div class="absolute w-24 h-24 bg-white rounded-full top-[-40px] left-28"></div>
+      </div>
+    </div>
+    <div class="absolute bottom-[30%] left-[-150px] cloud-1 opacity-40" style="animation-delay: -10s;">
+      <div class="w-56 h-18 bg-white rounded-full filter blur-sm relative">
+        <div class="absolute w-28 h-28 bg-white rounded-full top-[-45px] left-14"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="relative z-10 w-full h-full flex flex-col items-center justify-between p-4 md:p-6" id="app-container">
+
+    <!-- 1. LANGUAGE START SCREEN -->
+    <div id="screen-start" class="w-full max-w-lg m-auto flex flex-col items-center text-center p-6 rounded-3xl glassmorphism shadow-2xl relative">
+      <div class="text-6xl mb-4 animate-bounce">🏝️✨</div>
+      <h1 class="text-3xl md:text-4xl font-extrabold font-display text-sky-700 tracking-tight leading-tight mb-2">
+        3D Tracing Adventure
+      </h1>
+      <p class="text-sm text-slate-600 mb-6">Learn to trace letters in multiple languages!</p>
+
+      <div class="w-full space-y-3 mb-6">
+        <button onclick="selectLanguage('ar')" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 text-white font-extrabold text-lg flex items-center justify-between shadow-lg bubble-btn">
+          <span>العربية (RTL)</span>
+          <span class="text-2xl">🇸🇦</span>
+        </button>
+        <button onclick="selectLanguage('en')" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-400 to-indigo-500 text-white font-extrabold text-lg flex items-center justify-between shadow-lg bubble-btn">
+          <span>English</span>
+          <span class="text-2xl">🇬🇧</span>
+        </button>
+        <button onclick="selectLanguage('fr')" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-500 text-white font-extrabold text-lg flex items-center justify-between shadow-lg bubble-btn">
+          <span>Français</span>
+          <span class="text-2xl">🇫🇷</span>
+        </button>
+        <button onclick="selectLanguage('de')" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-extrabold text-lg flex items-center justify-between shadow-lg bubble-btn">
+          <span>Deutsch</span>
+          <span class="text-2xl">🇩🇪</span>
+        </button>
+      </div>
+
+      <div class="text-[10px] text-slate-400">Standalone Offline Edition • Built with ❤️</div>
+    </div>
+
+    <!-- 2. AVATAR SELECT SCREEN (HIDDEN BY DEFAULT) -->
+    <div id="screen-avatar" class="hidden w-full max-w-xl m-auto flex flex-col items-center text-center p-6 rounded-3xl glassmorphism shadow-2xl">
+      <h2 id="avatar-title" class="text-2xl font-extrabold text-sky-700 mb-2">Pick your companion!</h2>
+      <p id="avatar-sub" class="text-xs text-slate-500 mb-6">Your friend will cheer you on!</p>
+
+      <div class="grid grid-cols-2 gap-4 w-full mb-6" id="avatar-grid">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <button onclick="confirmAvatar()" id="avatar-confirm-btn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 text-white font-bold text-lg shadow-md bubble-btn">
+        Let's Go! ✅
+      </button>
+    </div>
+
+    <!-- 3. LEVEL MAP SCREEN (HIDDEN BY DEFAULT) -->
+    <div id="screen-map" class="hidden w-full max-w-2xl m-auto flex flex-col h-[85vh] justify-between p-6 rounded-3xl glassmorphism shadow-2xl relative">
+      <div class="flex items-center justify-between w-full mb-2">
+        <button onclick="goBackToStart()" class="p-3 rounded-full bg-slate-200/80 text-slate-600 hover:bg-slate-300 transition bubble-btn">
+          ⬅️
+        </button>
+        <h2 id="map-title" class="text-2xl font-extrabold text-sky-700 font-display">Adventure Map</h2>
+        <div class="text-amber-500 font-bold text-lg flex items-center gap-1 bg-white/90 px-3 py-1 rounded-full shadow-sm">
+          <span>⭐</span> <span id="map-stars">0</span>
+        </div>
+      </div>
+      <p id="map-sub" class="text-xs text-slate-500 text-center mb-4">Choose a letter island to begin tracing!</p>
+
+      <!-- Scrollable grid of floating letter islands -->
+      <div class="flex-1 overflow-y-auto pr-1 grid grid-cols-3 sm:grid-cols-4 gap-4 py-4" id="map-letters-grid">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- 4. TRACING GAMEPLAY SCREEN (HIDDEN BY DEFAULT) -->
+    <div id="screen-play" class="hidden w-full max-w-5xl flex-1 flex flex-col md:flex-row gap-6 items-stretch justify-between my-auto relative z-10">
+      
+      <!-- LEFT COLUMN: Canvas Tracing Panel -->
+      <div class="flex-1 flex flex-col justify-between items-center bg-white/40 backdrop-blur-md rounded-3xl p-4 border border-white/50 shadow-xl relative">
+        <!-- Play Header Bar -->
+        <div class="w-full flex items-center justify-between mb-4 z-20">
+          <button onclick="goToMap()" class="p-2.5 rounded-2xl bg-white/80 hover:bg-white text-slate-600 shadow-sm transition bubble-btn text-sm font-bold flex items-center gap-1">
+            🗺️ <span class="hidden sm:inline" id="label-map-btn">Map</span>
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <div class="bg-white/90 px-3 py-1 rounded-full shadow-sm text-amber-500 font-extrabold flex items-center gap-1 text-sm">
+              <span>⭐</span> <span id="play-stars">0</span>
+            </div>
+            <div class="bg-white/90 px-3 py-1 rounded-full shadow-sm text-blue-600 font-extrabold flex items-center gap-1 text-sm">
+              <span>💎</span> <span id="play-score">0</span>
+            </div>
+          </div>
+
+          <button onclick="restartLevel()" class="p-2.5 rounded-2xl bg-white/80 hover:bg-white text-slate-600 shadow-sm transition bubble-btn text-sm font-bold">
+            🔄
+          </button>
+        </div>
+
+        <!-- Tracing Canvas Area Container -->
+        <div class="flex-1 w-full flex items-center justify-center relative min-h-[300px] md:min-h-[420px]" id="canvas-container">
+          <div class="relative bg-white/80 rounded-2xl border border-white/80 shadow-md p-1" id="canvas-border-wrapper">
+            <canvas id="tracing-canvas" class="block cursor-pointer rounded-xl"></canvas>
+            
+            <!-- Guidance alerts -->
+            <div id="canvas-alert" class="hidden absolute top-4 left-0 right-0 text-center pointer-events-none select-none z-30">
+              <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-red-500 text-white font-medium text-xs shadow-lg">
+                ⚠️ <span id="alert-text">Stay inside the lines!</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full mt-4 bg-white/60 h-3 rounded-full overflow-hidden shadow-inner relative border border-white/40">
+          <div id="play-progress-fill" class="bg-gradient-to-r from-teal-400 to-blue-500 h-full w-[0%] transition-all duration-150 rounded-full"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Card & Letter Meaning Panel -->
+      <div class="w-full md:w-80 flex flex-col justify-between bg-white/70 backdrop-blur-md rounded-3xl p-5 border border-white/60 shadow-xl relative floating-island-anim">
+        
+        <!-- Companion Mascot Indicator -->
+        <div class="flex items-center gap-3 bg-white/50 p-2.5 rounded-2xl border border-white/50 mb-4 shadow-sm">
+          <span class="text-3xl" id="mascot-emoji">🐰</span>
+          <div class="text-left">
+            <p class="text-[10px] text-slate-400 uppercase tracking-widest font-extrabold" id="companion-label">Your Companion</p>
+            <p class="text-sm font-bold text-slate-700" id="mascot-name">Clever Bunny</p>
+          </div>
+        </div>
+
+        <!-- Target letter large representation card -->
+        <div class="flex-1 flex flex-col items-center justify-center py-6 text-center">
+          <span class="text-8xl font-black text-sky-800 font-display drop-shadow-md mb-4 scale-110" id="letter-display">A</span>
+          
+          <button onclick="pronounceLetter()" class="mb-6 py-2.5 px-5 rounded-2xl bg-sky-500 text-white font-bold text-sm shadow-md shadow-sky-200 hover:bg-sky-600 transition duration-150 flex items-center gap-1.5 bubble-btn">
+            🔊 <span id="label-pronounce-btn">Pronounce</span>
+          </button>
+
+          <div class="w-full border-t border-slate-200/80 my-4"></div>
+
+          <div class="flex flex-col items-center">
+            <span class="text-6xl mb-2" id="word-emoji">🍎</span>
+            <span class="text-2xl font-extrabold text-slate-800 font-display uppercase tracking-wide" id="word-spelling">Apple</span>
+            <span class="text-sm text-slate-500 font-medium italic" id="word-phonetics">Ap-ple</span>
+          </div>
+        </div>
+
+        <!-- Screenshot capture panel button -->
+        <button onclick="captureScreenshot()" class="w-full py-3 mt-4 rounded-xl bg-gradient-to-r from-pink-400 to-rose-500 text-white font-bold text-sm shadow-md bubble-btn flex items-center justify-center gap-1.5">
+          📸 <span id="label-screenshot-btn">Capture Work</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- 5. SCREENSHOT LIGHTBOX OVERLAY (HIDDEN) -->
+    <div id="screenshot-lightbox" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl p-6 max-w-md w-full flex flex-col items-center shadow-2xl relative animate-bounce-in">
+        <h3 id="screenshot-title" class="text-xl font-extrabold text-slate-800 mb-2">My Letter Drawing! 🎨</h3>
+        <p id="screenshot-sub" class="text-xs text-slate-500 mb-4">Right-click or press and hold the photo below to save it!</p>
+        
+        <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-2xl shadow-inner mb-6 w-full">
+          <img id="screenshot-image" class="w-full rounded-xl border border-white max-h-[350px] object-contain" src="" alt="Captured drawing">
+        </div>
+
+        <button onclick="closeScreenshot()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition bubble-btn">
+          Close ❌
+        </button>
+      </div>
+    </div>
+
+    <!-- 6. CELEBRATION MODAL OVERLAY (HIDDEN) -->
+    <div id="celebration-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-40 flex items-center justify-center p-4">
+      <div class="bg-white/90 backdrop-blur-xl border border-white rounded-3xl p-8 max-w-md w-full flex flex-col items-center text-center shadow-2xl animate-fade-in relative">
+        <div class="text-7xl mb-4" id="celeb-avatar">🎉🐰🎉</div>
+        <h3 id="celeb-congrats" class="text-2xl font-black text-sky-800 font-display mb-1">Awesome Job!</h3>
+        <p id="celeb-sub" class="text-sm text-slate-500 mb-6">You traced the letter beautifully!</p>
+
+        <!-- Dynamic stars dancing -->
+        <div class="flex gap-4 mb-8">
+          <span class="text-4xl text-amber-400 scale-125 filter drop-shadow">⭐</span>
+          <span class="text-5xl text-amber-400 scale-150 -translate-y-2 filter drop-shadow">⭐</span>
+          <span class="text-4xl text-amber-400 scale-125 filter drop-shadow">⭐</span>
+        </div>
+
+        <div class="w-full space-y-3">
+          <button onclick="nextLevel()" id="celeb-next-btn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 text-white font-extrabold text-lg shadow-lg shadow-emerald-100 bubble-btn">
+            Next Letter ➡️
+          </button>
+          <button onclick="closeCelebration()" id="celeb-again-btn" class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm transition bubble-btn">
+            Trace Again 🔄
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STANDALONE JS GAME ENGINE -->
+  <script>
+    // -------------------------------------------------------------
+    // LETTERS DATABASE WITH KEY MILESTONES (100x100 relative)
+    // -------------------------------------------------------------
+    const englishLetters = [
+      { char: 'A', name: 'A', strokes: [[{x:50,y:15},{x:20,y:85}],[{x:50,y:15},{x:80,y:85}],[{x:32,y:55},{x:68,y:55}]], example: {word:'Apple', phonetics:'Ap-ple', emoji:'🍎'} },
+      { char: 'B', name: 'B', strokes: [[{x:30,y:15},{x:30,y:85}],[{x:30,y:15},{x:65,y:15},{x:65,y:48},{x:30,y:48}],[{x:30,y:48},{x:72,y:48},{x:72,y:85},{x:30,y:85}]], example: {word:'Butterfly', phonetics:'But-ter-fly', emoji:'🦋'} },
+      { char: 'C', name: 'C', strokes: [[{x:75,y:25},{x:50,y:15},{x:25,y:50},{x:50,y:85},{x:75,y:75}]], example: {word:'Cat', phonetics:'Cat', emoji:'🐱'} },
+      { char: 'D', name: 'D', strokes: [[{x:30,y:15},{x:30,y:85}],[{x:30,y:15},{x:75,y:15},{x:75,y:50},{x:75,y:85},{x:30,y:85}]], example: {word:'Dinosaur', phonetics:'Di-no-saur', emoji:'🦖'} },
+      { char: 'E', name: 'E', strokes: [[{x:30,y:15},{x:30,y:85}],[{x:30,y:15},{x:70,y:15}],[{x:30,y:50},{x:60,y:50}],[{x:30,y:85},{x:70,y:85}]], example: {word:'Elephant', phonetics:'El-e-phant', emoji:'🐘'} }
+    ];
+
+    const arabicLetters = [
+      { char: 'أ', name: 'ألف', strokes: [[{x:50,y:35},{x:50,y:85}],[{x:60,y:15},{x:40,y:15},{x:40,y:24},{x:60,y:24},{x:42,y:31}]], example: {word:'أرنب', phonetics:'Arnab', emoji:'🐇'} },
+      { char: 'ب', name: 'باء', strokes: [[{x:80,y:45},{x:80,y:65},{x:70,y:75},{x:30,y:75},{x:20,y:65},{x:20,y:45}],[{x:50,y:88}]], example: {word:'بيت', phonetics:'Bayt', emoji:'🏠'} },
+      { char: 'ت', name: 'تاء', strokes: [[{x:80,y:45},{x:80,y:65},{x:70,y:75},{x:30,y:75},{x:20,y:65},{x:20,y:45}],[{x:44,y:32}],[{x:56,y:32}]], example: {word:'تفاح', phonetics:'Tuffah', emoji:'🍎'} },
+      { char: 'ث', name: 'ثاء', strokes: [[{x:80,y:45},{x:80,y:65},{x:70,y:75},{x:30,y:75},{x:20,y:65},{x:20,y:45}],[{x:44,y:35}],[{x:56,y:35}],[{x:50,y:24}]], example: {word:'ثعلب', phonetics:'Tha\'lab', emoji:'🦊'} },
+      { char: 'ج', name: 'جيم', strokes: [[{x:35,y:25},{x:75,y:25}],[{x:75,y:25},{x:30,y:55},{x:45,y:85},{x:75,y:75}],[{x:52,y:52}]], example: {word:'جمل', phonetics:'Jamal', emoji:'🐫'} }
+    ];
+
+    const frenchLetters = [
+      { char: 'A', name: 'A', strokes: englishLetters[0].strokes, example: {word:'Abeille', phonetics:'Bee', emoji:'🐝'} },
+      { char: 'B', name: 'B', strokes: englishLetters[1].strokes, example: {word:'Ballon', phonetics:'Balloon', emoji:'🎈'} },
+      { char: 'C', name: 'C', strokes: englishLetters[2].strokes, example: {word:'Canard', phonetics:'Duck', emoji:'🦆'} },
+      { char: 'D', name: 'D', strokes: englishLetters[3].strokes, example: {word:'Dauphin', phonetics:'Dolphin', emoji:'🐬'} },
+      { char: 'E', name: 'E', strokes: englishLetters[4].strokes, example: {word:'Étoile', phonetics:'Star', emoji:'⭐'} }
+    ];
+
+    const germanLetters = [
+      { char: 'A', name: 'A', strokes: englishLetters[0].strokes, example: {word:'Apfel', phonetics:'Apple', emoji:'🍎'} },
+      { char: 'B', name: 'B', strokes: englishLetters[1].strokes, example: {word:'Biene', phonetics:'Bee', emoji:'🐝'} },
+      { char: 'C', name: 'C', strokes: englishLetters[2].strokes, example: {word:'Clown', phonetics:'Clown', emoji:'🤡'} },
+      { char: 'D', name: 'D', strokes: englishLetters[3].strokes, example: {word:'Drache', phonetics:'Dragon', emoji:'🐉'} },
+      { char: 'E', name: 'E', strokes: englishLetters[4].strokes, example: {word:'Erdbeere', phonetics:'Strawberry', emoji:'🍓'} }
+    ];
+
+    // -------------------------------------------------------------
+    // LOCALIZATION
+    // -------------------------------------------------------------
+    const translations = {
+      ar: {
+        avatarTitle: 'اختر رفيق المغامرة! 🐾',
+        avatarSub: 'سوف يرافقك رفيقك اللطيف في رحلتك لتعلم الحروف!',
+        avatarConfirm: 'اختر هذا الرفيق ✅',
+        mapTitle: 'خريطة مغامرة الحروف 🗺️',
+        mapSub: 'اختر جزيرة الحروف العائمة لتبدأ الرسم!',
+        labelStars: 'النجوم',
+        labelScore: 'النقاط',
+        labelProgress: 'التقدم',
+        labelMascot: 'رفيقك اللطيف',
+        labelPronounce: 'نطق الحرف 🔊',
+        labelCapture: 'التقاط الصورة 📸',
+        labelMap: 'الخريطة 🗺️',
+        congrats: 'مبارك! إنجاز رائع 🎉',
+        wellDone: 'لقد رسمت الحرف بخط جميل ومتقن!',
+        nextLevel: 'الحرف التالي ➡️',
+        again: 'أعد الرسم 🔄',
+        stayInside: 'ابقَ داخل الخط! ⚠️'
+      },
+      en: {
+        avatarTitle: 'Pick your companion! 🐾',
+        avatarSub: 'Your cute animal friend will celebrate and guide you along the way!',
+        avatarConfirm: 'Select Companion ✅',
+        mapTitle: 'Adventure Map 🗺️',
+        mapSub: 'Select a floating letter island to start tracing!',
+        labelStars: 'Stars',
+        labelScore: 'Score',
+        labelProgress: 'Progress',
+        labelMascot: 'Your Companion',
+        labelPronounce: 'Pronounce 🔊',
+        labelCapture: 'Capture Work 📸',
+        labelMap: 'Map 🗺️',
+        congrats: 'Congratulations! 🎉',
+        wellDone: 'You traced the letter beautifully!',
+        nextLevel: 'Next Letter ➡️',
+        again: 'Trace Again 🔄',
+        stayInside: 'Stay inside the line! ⚠️'
+      },
+      fr: {
+        avatarTitle: 'Choisis ton compagnon ! 🐾',
+        avatarSub: 'Ton adorable ami animal t\'accompagnera et fêtera tes victoires !',
+        avatarConfirm: 'Sélectionner ✅',
+        mapTitle: 'Carte d\'aventure 🗺️',
+        mapSub: 'Choisis une île volante pour commencer à tracer !',
+        labelStars: 'Étoiles',
+        labelScore: 'Score',
+        labelProgress: 'Progrès',
+        labelMascot: 'Ton Compagnon',
+        labelPronounce: 'Prononcer 🔊',
+        labelCapture: 'Capturer 📸',
+        labelMap: 'Carte 🗺️',
+        congrats: 'Félicitations ! 🎉',
+        wellDone: 'Tu as tracé la lettre magnifiquement !',
+        nextLevel: 'Lettre suivante ➡️',
+        again: 'Tracer à nouveau 🔄',
+        stayInside: 'Reste sur la ligne ! ⚠️'
+      },
+      de: {
+        avatarTitle: 'Wähle deinen Begleiter! 🐾',
+        avatarSub: 'Dein niedlicher Tierfreund wird dich auf dem Weg begleiten und anfeuern!',
+        avatarConfirm: 'Begleiter Wählen ✅',
+        mapTitle: 'Abenteuerkarte 🗺️',
+        mapSub: 'Wähle eine schwebende Buchstabeninsel, um mit dem Schreiben zu beginnen!',
+        labelStars: 'Sterne',
+        labelScore: 'Punkte',
+        labelProgress: 'Fortschritt',
+        labelMascot: 'Dein Begleiter',
+        labelPronounce: 'Aussprache 🔊',
+        labelCapture: 'Fotografieren 📸',
+        labelMap: 'Karte 🗺️',
+        congrats: 'Herzlichen Glückwunsch! 🎉',
+        wellDone: 'Du hast den Buchstaben wunderschön geschrieben!',
+        nextLevel: 'Nächster Buchstabe ➡️',
+        again: 'Nochmal schreiben 🔄',
+        stayInside: 'Bleib auf der Linie! ⚠️'
+      }
+    };
+
+    const avatars = [
+      { id: 'lion', emoji: '🦁', name: { ar: 'شبل شجاع', en: 'Brave Cub', fr: 'Lionceau Brave', de: 'Mutiger Löwe' } },
+      { id: 'penguin', emoji: '🐧', name: { ar: 'بطريق لطيف', en: 'Sweet Penguin', fr: 'Manchot Doux', de: 'Süßer Pinguin' } },
+      { id: 'bunny', emoji: '🐰', name: { ar: 'أرنب ذكي', en: 'Clever Bunny', fr: 'Lapin Malin', de: 'Schlaues Häschen' } },
+      { id: 'turtle', emoji: '🐢', name: { ar: 'سلحفاة هادئة', en: 'Calm Turtle', fr: 'Tortue Calme', de: 'Ruhige Schildkröte' } }
+    ];
+
+    // -------------------------------------------------------------
+    // STATE MANAGERS
+    // -------------------------------------------------------------
+    let state = {
+      lang: 'en',
+      avatar: 'bunny',
+      stars: 0,
+      score: 0,
+      currentIdx: 0,
+      completedLevels: []
+    };
+
+    let activeLetters = englishLetters;
+
+    // AUDIO SYNTHESIZER
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSfx(type, freqFactor = 1) {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'click') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.12);
+        } else if (type === 'draw') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(350 + (freqFactor * 450), audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.12);
+        } else if (type === 'success') {
+          const now = audioCtx.currentTime;
+          const chords = [261.63, 329.63, 392.00, 523.25, 659.25];
+          chords.forEach((hz, idx) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.type = 'sine';
+            o.frequency.setValueAtTime(hz, now + idx * 0.08);
+            g.gain.setValueAtTime(0, now + idx * 0.08);
+            g.gain.linearRampToValueAtTime(0.1, now + idx * 0.08 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.4);
+            o.start(now + idx * 0.08);
+            o.stop(now + idx * 0.08 + 0.5);
+          });
+        } else if (type === 'warn') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(130, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.25);
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.27);
+        }
+      } catch (e) {
+        console.warn('Web Audio error:', e);
+      }
+    }
+
+    // WEB SPEECH
+    function speakText(text, l) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const codes = { ar: 'ar', en: 'en-US', fr: 'fr-FR', de: 'de-DE' };
+        utterance.lang = codes[l] || 'en-US';
+        utterance.rate = 0.85;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {}
+    }
+
+    // -------------------------------------------------------------
+    // NAVIGATION
+    // -------------------------------------------------------------
+    function selectLanguage(lang) {
+      playSfx('click');
+      state.lang = lang;
+      
+      // Update orientation
+      if (lang === 'ar') {
+        document.body.classList.add('rtl');
+        activeLetters = arabicLetters;
+      } else {
+        document.body.classList.remove('rtl');
+        activeLetters = lang === 'fr' ? frenchLetters : (lang === 'de' ? germanLetters : englishLetters);
+      }
+
+      showScreen('screen-avatar');
+      renderAvatarGrid();
+    }
+
+    function renderAvatarGrid() {
+      const grid = document.getElementById('avatar-grid');
+      grid.innerHTML = '';
+      
+      const strings = translations[state.lang];
+      document.getElementById('avatar-title').innerText = strings.avatarTitle;
+      document.getElementById('avatar-sub').innerText = strings.avatarSub;
+      document.getElementById('avatar-confirm-btn').innerText = strings.avatarConfirm;
+
+      avatars.forEach(av => {
+        const selected = state.avatar === av.id;
+        const btn = document.createElement('button');
+        btn.className = `p-4 rounded-2xl flex flex-col items-center justify-center transition border-2 ${
+          selected ? 'bg-indigo-50 border-indigo-500 scale-105 shadow-md' : 'bg-white border-slate-100 hover:border-slate-200'
+        } bubble-btn`;
+        btn.onclick = () => {
+          playSfx('click');
+          state.avatar = av.id;
+          renderAvatarGrid();
+        };
+
+        const emoji = document.createElement('span');
+        emoji.className = 'text-5xl mb-2 animate-bounce';
+        emoji.style.animationDelay = `${Math.random()}s`;
+        emoji.innerText = av.emoji;
+
+        const name = document.createElement('span');
+        name.className = 'text-xs font-bold text-slate-700';
+        name.innerText = av.name[state.lang] || av.name['en'];
+
+        btn.appendChild(emoji);
+        btn.appendChild(name);
+        grid.appendChild(btn);
+      });
+    }
+
+    function confirmAvatar() {
+      playSfx('click');
+      showScreen('screen-map');
+      renderMapGrid();
+    }
+
+    function renderMapGrid() {
+      const strings = translations[state.lang];
+      document.getElementById('map-title').innerText = strings.mapTitle;
+      document.getElementById('map-sub').innerText = strings.mapSub;
+      document.getElementById('map-stars').innerText = state.stars;
+
+      const grid = document.getElementById('map-letters-grid');
+      grid.innerHTML = '';
+
+      activeLetters.forEach((letData, idx) => {
+        const isUnlocked = idx <= state.completedLevels.length;
+        const btn = document.createElement('button');
+        
+        btn.className = `aspect-square p-4 rounded-3xl flex flex-col items-center justify-between transition-all relative ${
+          isUnlocked 
+            ? 'bg-gradient-to-br from-indigo-400 to-sky-500 text-white shadow-lg shadow-sky-100 border border-indigo-300' 
+            : 'bg-slate-200/80 text-slate-400 border border-slate-100 opacity-60 cursor-not-allowed'
+        } bubble-btn`;
+
+        if (isUnlocked) {
+          btn.onclick = () => {
+            playSfx('click');
+            startLevel(idx);
+          };
+        }
+
+        const char = document.createElement('span');
+        char.className = 'text-3xl font-black font-display';
+        char.innerText = isUnlocked ? letData.char : '🔒';
+
+        const starCount = state.completedLevels.includes(letData.char) ? '⭐⭐⭐' : '';
+        const starsBadge = document.createElement('span');
+        starsBadge.className = 'text-[10px] text-yellow-300';
+        starsBadge.innerText = starCount;
+
+        btn.appendChild(char);
+        btn.appendChild(starsBadge);
+        grid.appendChild(btn);
+      });
+    }
+
+    function goBackToStart() {
+      playSfx('click');
+      showScreen('screen-start');
+    }
+
+    function goToMap() {
+      playSfx('click');
+      showScreen('screen-map');
+      renderMapGrid();
+    }
+
+    function showScreen(id) {
+      document.getElementById('screen-start').classList.add('hidden');
+      document.getElementById('screen-avatar').classList.add('hidden');
+      document.getElementById('screen-map').classList.add('hidden');
+      document.getElementById('screen-play').classList.add('hidden');
+      
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    // -------------------------------------------------------------
+    // PLAY ENGINE & DRAWING LOGIC
+    // -------------------------------------------------------------
+    let currentStrokeIdx = 0;
+    let lastReachedPointIdx = -1;
+    let isDrawing = false;
+    let particles = [];
+    let userPoints = [];
+    let canvas, ctx;
+
+    function startLevel(idx) {
+      state.currentIdx = idx;
+      showScreen('screen-play');
+      
+      const letter = activeLetters[idx];
+      const strings = translations[state.lang];
+
+      // Reset Tracing Variables
+      currentStrokeIdx = 0;
+      lastReachedPointIdx = -1;
+      isDrawing = false;
+      particles = [];
+      userPoints = [];
+
+      // Update Play UI
+      document.getElementById('play-stars').innerText = state.stars;
+      document.getElementById('play-score').innerText = state.score;
+      document.getElementById('play-progress-fill').style.width = '0%';
+      document.getElementById('letter-display').innerText = letter.char;
+      document.getElementById('word-emoji').innerText = letter.example.emoji;
+      document.getElementById('word-spelling').innerText = letter.example.word;
+      document.getElementById('word-phonetics').innerText = letter.example.phonetics;
+      
+      // Mascot companion setting
+      const companion = avatars.find(a => a.id === state.avatar) || avatars[2];
+      document.getElementById('mascot-emoji').innerText = companion.emoji;
+      document.getElementById('mascot-name').innerText = companion.name[state.lang] || companion.name['en'];
+
+      // Localize gameplay labels
+      document.getElementById('companion-label').innerText = strings.labelMascot;
+      document.getElementById('label-pronounce-btn').innerText = strings.labelPronounce;
+      document.getElementById('label-screenshot-btn').innerText = strings.labelCapture;
+      document.getElementById('label-map-btn').innerText = strings.labelMap;
+
+      // Speak Letter
+      speakLetter();
+
+      // Init Canvas
+      initCanvas();
+    }
+
+    function initCanvas() {
+      canvas = document.getElementById('tracing-canvas');
+      ctx = canvas.getContext('2d');
+      const size = Math.min(window.innerWidth - 32, 450);
+      
+      canvas.width = size * window.devicePixelRatio;
+      canvas.height = size * window.devicePixelRatio;
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      // Event Listeners
+      canvas.onmousedown = handleDown;
+      canvas.onmousemove = handleMove;
+      canvas.onmouseup = handleUp;
+      canvas.onmouseleave = handleUp;
+
+      canvas.ontouchstart = (e) => handleDown(e.touches[0]);
+      canvas.ontouchmove = (e) => handleMove(e.touches[0]);
+      canvas.ontouchend = handleUp;
+
+      // Start game frame loop
+      if (window.renderLoopId) cancelAnimationFrame(window.renderLoopId);
+      renderLoop();
+    }
+
+    // Dense interpolation for strokes
+    function getInterpolatedStroke(stroke) {
+      if (stroke.length === 0) return [];
+      if (stroke.length === 1) return stroke;
+      const points = [stroke[0]];
+      for (let i = 0; i < stroke.length - 1; i++) {
+        const start = stroke[i];
+        const end = stroke[i + 1];
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        const steps = Math.max(1, Math.floor(d / 3));
+        for (let s = 1; s <= steps; s++) {
+          const t = s / steps;
+          points.push({ x: start.x + dx * t, y: start.y + dy * t });
+        }
+      }
+      return points;
+    }
+
+    function handleDown(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.clientX || e.pageX;
+      const clientY = e.clientY || e.pageY;
+      const x = ((clientX - rect.left) / rect.width) * 100;
+      const y = ((clientY - rect.top) / rect.height) * 100;
+
+      const letter = activeLetters[state.currentIdx];
+      if (currentStrokeIdx >= letter.strokes.length) return;
+
+      const stroke = letter.strokes[currentStrokeIdx];
+      
+      if (stroke.length === 1) { // Dot tap
+        const dot = stroke[0];
+        const dist = Math.sqrt(Math.pow(dot.x - x, 2) + Math.pow(dot.y - y, 2));
+        if (dist < 15) {
+          playSfx('success');
+          addBurstParticles((dot.x/100)*rect.width, (dot.y/100)*rect.width);
+          advanceStroke();
+        } else {
+          triggerWarning();
+        }
+        return;
+      }
+
+      // Continuous stroke start
+      const start = stroke[0];
+      const dist = Math.sqrt(Math.pow(start.x - x, 2) + Math.pow(start.y - y, 2));
+      if (dist < 18) {
+        isDrawing = true;
+        lastReachedPointIdx = 0;
+        userPoints = [{x, y}];
+        playSfx('draw', 0.1);
+      } else {
+        triggerWarning();
+      }
+    }
+
+    function handleMove(e) {
+      if (!isDrawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.clientX || e.pageX;
+      const clientY = e.clientY || e.pageY;
+      const x = ((clientX - rect.left) / rect.width) * 100;
+      const y = ((clientY - rect.top) / rect.height) * 100;
+
+      userPoints.push({x, y});
+      if (userPoints.length > 25) userPoints.shift();
+
+      const letter = activeLetters[state.currentIdx];
+      const stroke = letter.strokes[currentStrokeIdx];
+      const interpolated = getInterpolatedStroke(stroke);
+
+      let currentReached = lastReachedPointIdx;
+      let foundAdvance = false;
+
+      // Check next few points to see if tracing progressed
+      const lookAhead = Math.min(5, interpolated.length - 1 - currentReached);
+      let bestIdx = -1;
+      let minDist = 999;
+
+      for (let i = 1; i <= lookAhead; i++) {
+        const testIdx = currentReached + i;
+        const pt = interpolated[testIdx];
+        const dist = Math.sqrt(Math.pow(pt.x - x, 2) + Math.pow(pt.y - y, 2));
+        if (dist < minDist) {
+          minDist = dist;
+          if (dist < 16) {
+            bestIdx = testIdx;
+          }
+        }
+      }
+
+      if (bestIdx !== -1) {
+        currentReached = bestIdx;
+        lastReachedPointIdx = currentReached;
+        foundAdvance = true;
+        
+        // Progress sounds & visuals
+        const progress = currentReached / (interpolated.length - 1);
+        playSfx('draw', progress);
+        document.getElementById('play-progress-fill').style.width = `${progress * 100}%`;
+
+        // Particles
+        const canvasSize = rect.width;
+        const targetPt = interpolated[currentReached];
+        addDrawParticle((targetPt.x/100)*canvasSize, (targetPt.y/100)*canvasSize);
+
+        if (currentReached >= interpolated.length - 1) {
+          isDrawing = false;
+          userPoints = [];
+          playSfx('success');
+          addBurstParticles((targetPt.x/100)*canvasSize, (targetPt.y/100)*canvasSize);
+          advanceStroke();
+        }
+      }
+
+      // Check if player strayed too far from active path
+      if (!foundAdvance && currentReached >= 0) {
+        let closest = 999;
+        interpolated.forEach(pt => {
+          const d = Math.sqrt(Math.pow(pt.x - x, 2) + Math.pow(pt.y - y, 2));
+          if (d < closest) closest = d;
+        });
+
+        if (closest > 22) { // Wander tolerance threshold
+          isDrawing = false;
+          userPoints = [];
+          triggerWarning();
+        }
+      }
+    }
+
+    function handleUp() {
+      isDrawing = false;
+      userPoints = [];
+    }
+
+    function advanceStroke() {
+      const letter = activeLetters[state.currentIdx];
+      currentStrokeIdx++;
+      lastReachedPointIdx = -1;
+
+      if (currentStrokeIdx >= letter.strokes.length) {
+        // Complete Level celebration!
+        state.score += 150;
+        state.stars = Math.min(state.stars + 3, activeLetters.length * 3);
+        if (!state.completedLevels.includes(letter.char)) {
+          state.completedLevels.push(letter.char);
+        }
+        
+        document.getElementById('play-score').innerText = state.score;
+        document.getElementById('play-stars').innerText = state.stars;
+
+        setTimeout(() => {
+          triggerCelebration();
+        }, 500);
+      }
+    }
+
+    function triggerWarning() {
+      playSfx('warn');
+      const alertBox = document.getElementById('canvas-alert');
+      const strings = translations[state.lang];
+      document.getElementById('alert-text').innerText = strings.stayInside;
+      
+      alertBox.classList.remove('hidden');
+      // Shake canvas wrapper
+      const wrapper = document.getElementById('canvas-border-wrapper');
+      wrapper.classList.add('animate-ping');
+      setTimeout(() => {
+        alertBox.classList.add('hidden');
+        wrapper.classList.remove('animate-ping');
+      }, 1200);
+    }
+
+    // -------------------------------------------------------------
+    // PARTICLE RENDER ENGINE
+    // -------------------------------------------------------------
+    function addDrawParticle(cx, cy) {
+      particles.push({
+        x: cx, y: cy,
+        vx: (Math.random() - 0.5) * 3,
+        vy: (Math.random() - 0.5) * 3 - 0.5,
+        color: `hsl(${Math.random() * 360}, 95%, 65%)`,
+        size: Math.random() * 4 + 4,
+        alpha: 1.0,
+        decay: 0.02
+      });
+    }
+
+    function addBurstParticles(cx, cy) {
+      for (let i = 0; i < 30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 2;
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1,
+          color: `hsl(${Math.random() * 360}, 95%, 60%)`,
+          size: Math.random() * 5 + 4,
+          alpha: 1.0,
+          decay: 0.015
+        });
+      }
+    }
+
+    function renderLoop() {
+      if (!canvas || !ctx) return;
+      const size = canvas.width / window.devicePixelRatio;
+
+      ctx.clearRect(0, 0, size, size);
+
+      const letter = activeLetters[state.currentIdx];
+
+      // Draw standard backgrounds
+      letter.strokes.forEach((stroke, idx) => {
+        if (stroke.length === 1) { // dot
+          const p = stroke[0];
+          const px = (p.x / 100) * size;
+          const py = (p.y / 100) * size;
+          ctx.beginPath();
+          ctx.arc(px, py, 16, 0, Math.PI * 2);
+          ctx.fillStyle = idx === currentStrokeIdx ? 'rgba(239, 68, 68, 0.15)' : 'rgba(203, 213, 225, 0.2)';
+          ctx.fill();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = idx === currentStrokeIdx ? '#ef4444' : '#cbd5e1';
+          ctx.stroke();
+          return;
+        }
+
+        // Stroke template channel
+        ctx.beginPath();
+        stroke.forEach((p, pIdx) => {
+          const px = (p.x / 100) * size;
+          const py = (p.y / 100) * size;
+          if (pIdx === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 38;
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.5)';
+        ctx.stroke();
+
+        ctx.lineWidth = 30;
+        ctx.strokeStyle = idx === currentStrokeIdx ? 'rgba(254, 243, 199, 0.95)' : 'rgba(255, 255, 255, 0.7)';
+        ctx.stroke();
+      });
+
+      // Draw COMPLETED strokes
+      for (let s = 0; s < currentStrokeIdx; s++) {
+        const stroke = letter.strokes[s];
+        if (stroke.length === 1) {
+          const p = stroke[0];
+          ctx.beginPath();
+          ctx.arc((p.x/100)*size, (p.y/100)*size, 14, 0, Math.PI * 2);
+          ctx.fillStyle = '#10b981';
+          ctx.fill();
+          continue;
+        }
+
+        ctx.beginPath();
+        stroke.forEach((p, pIdx) => {
+          if (pIdx === 0) ctx.moveTo((p.x/100)*size, (p.y/100)*size);
+          else ctx.lineTo((p.x/100)*size, (p.y/100)*size);
+        });
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 30;
+        ctx.strokeStyle = '#10b981';
+        ctx.stroke();
+      }
+
+      // Draw ACTIVE Progress
+      const activeStroke = letter.strokes[currentStrokeIdx];
+      if (activeStroke && activeStroke.length > 1 && lastReachedPointIdx >= 0) {
+        const interpolated = getInterpolatedStroke(activeStroke);
+        ctx.beginPath();
+        for (let i = 0; i <= lastReachedPointIdx; i++) {
+          const pt = interpolated[i];
+          if (i === 0) ctx.moveTo((pt.x/100)*size, (pt.y/100)*size);
+          else ctx.lineTo((pt.x/100)*size, (pt.y/100)*size);
+        }
+        ctx.lineWidth = 30;
+        ctx.strokeStyle = '#3b82f6';
+        ctx.stroke();
+      }
+
+      // Draw particles
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * p.alpha, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1.0;
+      particles = particles.filter(p => p.alpha > 0);
+
+      window.renderLoopId = requestAnimationFrame(renderLoop);
+    }
+
+    // -------------------------------------------------------------
+    // AUDIO VOICE SPEECH PRONUNCIATIONS
+    // -------------------------------------------------------------
+    function pronounceLetter() {
+      playSfx('click');
+      speakLetter();
+    }
+
+    function speakLetter() {
+      const letter = activeLetters[state.currentIdx];
+      speakText(letter.char, state.lang);
+      
+      // Delay saying the companion word for preschool learning!
+      setTimeout(() => {
+        speakText(letter.example.word, state.lang);
+      }, 1000);
+    }
+
+    function restartLevel() {
+      playSfx('click');
+      startLevel(state.currentIdx);
+    }
+
+    // -------------------------------------------------------------
+    // CELEBRATION MODAL
+    // -------------------------------------------------------------
+    function triggerCelebration() {
+      const strings = translations[state.lang];
+      document.getElementById('celeb-congrats').innerText = strings.congrats;
+      document.getElementById('celeb-sub').innerText = strings.wellDone;
+      document.getElementById('celeb-next-btn').innerText = strings.nextLevel;
+      document.getElementById('celeb-again-btn').innerText = strings.again;
+
+      const companion = avatars.find(a => a.id === state.avatar) || avatars[2];
+      document.getElementById('celeb-avatar').innerText = `🎉${companion.emoji}🎉`;
+
+      document.getElementById('celebration-modal').classList.remove('hidden');
+    }
+
+    function closeCelebration() {
+      playSfx('click');
+      document.getElementById('celebration-modal').classList.add('hidden');
+      startLevel(state.currentIdx);
+    }
+
+    function nextLevel() {
+      playSfx('click');
+      document.getElementById('celebration-modal').classList.add('hidden');
+      
+      const nextIdx = state.currentIdx + 1;
+      if (nextIdx < activeLetters.length) {
+        startLevel(nextIdx);
+      } else {
+        goToMap();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // SCREENSHOT / CAMERA SYSTEM
+    // -------------------------------------------------------------
+    function captureScreenshot() {
+      playSfx('click');
+      const drawCanvas = document.getElementById('tracing-canvas');
+      if (!drawCanvas) return;
+
+      // Draw beautiful retro polaroid framing card
+      const captureCanvas = document.createElement('canvas');
+      const ctxCap = captureCanvas.getContext('2d');
+      const letter = activeLetters[state.currentIdx];
+
+      captureCanvas.width = 500;
+      captureCanvas.height = 600;
+
+      // White Card base
+      ctxCap.fillStyle = '#ffffff';
+      ctxCap.fillRect(0, 0, 500, 600);
+
+      // Sky backdrop inside photo
+      const grad = ctxCap.createLinearGradient(0, 20, 0, 460);
+      grad.addColorStop(0, '#38bdf8');
+      grad.addColorStop(1, '#fef08a');
+      ctxCap.fillStyle = grad;
+      ctxCap.fillRect(20, 20, 460, 440);
+
+      // Draw the traced letters from original canvas
+      ctxCap.drawImage(drawCanvas, 20, 20, 460, 440);
+
+      // Card bottom polaroid text
+      ctxCap.fillStyle = '#1e293b';
+      ctxCap.font = 'bold 28px Space Grotesk, sans-serif';
+      ctxCap.textAlign = 'center';
+      ctxCap.fillText(`My Drawing of Letter "${letter.char}"`, 250, 510);
+
+      ctxCap.fillStyle = '#64748b';
+      ctxCap.font = '16px Inter, sans-serif';
+      ctxCap.fillText(`${letter.example.emoji} ${letter.example.word} • 3D Tracing Adventure`, 250, 550);
+
+      // Show lightbox image
+      const dataUrl = captureCanvas.toDataURL('image/png');
+      document.getElementById('screenshot-image').src = dataUrl;
+      document.getElementById('screenshot-lightbox').classList.remove('hidden');
+    }
+
+    function closeScreenshot() {
+      playSfx('click');
+      document.getElementById('screenshot-lightbox').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
